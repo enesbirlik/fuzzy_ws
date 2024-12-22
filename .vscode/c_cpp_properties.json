@@ -1,0 +1,35 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "${default}",
+        "limitSymbolsToIncludedHeaders": false
+      },
+      "includePath": [
+        "/home/enesb/arduinobot_ws/install/arduinobot_msgs/include/**",
+        "/home/enesb/arduinobot_ws/install/arduinobot_controller/include/**",
+        "/home/enesb/ros2_control_demos/install/ros2_control_demo_example_9/include/**",
+        "/home/enesb/ros2_control_demos/install/ros2_control_demo_example_8/include/**",
+        "/home/enesb/ros2_control_demos/install/ros2_control_demo_example_7/include/**",
+        "/home/enesb/ros2_control_demos/install/ros2_control_demo_example_6/include/**",
+        "/home/enesb/ros2_control_demos/install/ros2_control_demo_example_5/include/**",
+        "/home/enesb/ros2_control_demos/install/ros2_control_demo_example_4/include/**",
+        "/home/enesb/ros2_control_demos/install/ros2_control_demo_example_3/include/**",
+        "/home/enesb/ros2_control_demos/install/ros2_control_demo_example_2/include/**",
+        "/home/enesb/ros2_control_demos/install/ros2_control_demo_example_14/include/**",
+        "/home/enesb/ros2_control_demos/install/ros2_control_demo_example_12/include/**",
+        "/home/enesb/ros2_control_demos/install/ros2_control_demo_example_11/include/**",
+        "/home/enesb/ros2_control_demos/install/ros2_control_demo_example_10/include/**",
+        "/home/enesb/ros2_control_demos/install/ros2_control_demo_example_1/include/**",
+        "/opt/ros/humble/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS",
+      "intelliSenseMode": "gcc-x64",
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "gnu11",
+      "cppStandard": "c++14"
+    }
+  ],
+  "version": 4
+}

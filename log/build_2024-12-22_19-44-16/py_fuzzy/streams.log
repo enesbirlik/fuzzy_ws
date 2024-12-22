@@ -1,0 +1,25 @@
+[0.695s] Invoking command in '/home/enesb/fuzzy_ws/src/py_fuzzy': PYTHONPATH=/home/enesb/fuzzy_ws/build/py_fuzzy/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/enesb/fuzzy_ws/install/py_fuzzy/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/py_fuzzy build --build-base /home/enesb/fuzzy_ws/build/py_fuzzy/build install --record /home/enesb/fuzzy_ws/build/py_fuzzy/install.log --single-version-externally-managed install_data
+[0.958s] running egg_info
+[0.960s] writing ../../build/py_fuzzy/py_fuzzy.egg-info/PKG-INFO
+[0.960s] writing dependency_links to ../../build/py_fuzzy/py_fuzzy.egg-info/dependency_links.txt
+[0.960s] writing entry points to ../../build/py_fuzzy/py_fuzzy.egg-info/entry_points.txt
+[0.960s] writing requirements to ../../build/py_fuzzy/py_fuzzy.egg-info/requires.txt
+[0.960s] writing top-level names to ../../build/py_fuzzy/py_fuzzy.egg-info/top_level.txt
+[0.964s] reading manifest file '../../build/py_fuzzy/py_fuzzy.egg-info/SOURCES.txt'
+[0.964s] writing manifest file '../../build/py_fuzzy/py_fuzzy.egg-info/SOURCES.txt'
+[0.964s] running build
+[0.964s] running build_py
+[0.964s] copying py_fuzzy/cartpole_fuzzy_controller.py -> /home/enesb/fuzzy_ws/build/py_fuzzy/build/lib/py_fuzzy
+[0.965s] running install
+[0.965s] running install_lib
+[0.966s] copying /home/enesb/fuzzy_ws/build/py_fuzzy/build/lib/py_fuzzy/cartpole_fuzzy_controller.py -> /home/enesb/fuzzy_ws/install/py_fuzzy/lib/python3.10/site-packages/py_fuzzy
+[0.967s] byte-compiling /home/enesb/fuzzy_ws/install/py_fuzzy/lib/python3.10/site-packages/py_fuzzy/cartpole_fuzzy_controller.py to cartpole_fuzzy_controller.cpython-310.pyc
+[0.969s] running install_data
+[0.969s] running install_egg_info
+[0.972s] removing '/home/enesb/fuzzy_ws/install/py_fuzzy/lib/python3.10/site-packages/py_fuzzy-0.0.0-py3.10.egg-info' (and everything under it)
+[0.972s] Copying ../../build/py_fuzzy/py_fuzzy.egg-info to /home/enesb/fuzzy_ws/install/py_fuzzy/lib/python3.10/site-packages/py_fuzzy-0.0.0-py3.10.egg-info
+[0.972s] running install_scripts
+[0.997s] Installing cartpole_fuzzy_controller script to /home/enesb/fuzzy_ws/install/py_fuzzy/lib/py_fuzzy
+[0.997s] Installing cartpole_pid_controller script to /home/enesb/fuzzy_ws/install/py_fuzzy/lib/py_fuzzy
+[0.998s] writing list of installed files to '/home/enesb/fuzzy_ws/build/py_fuzzy/install.log'
+[1.024s] Invoked command in '/home/enesb/fuzzy_ws/src/py_fuzzy' returned '0': PYTHONPATH=/home/enesb/fuzzy_ws/build/py_fuzzy/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/enesb/fuzzy_ws/install/py_fuzzy/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/py_fuzzy build --build-base /home/enesb/fuzzy_ws/build/py_fuzzy/build install --record /home/enesb/fuzzy_ws/build/py_fuzzy/install.log --single-version-externally-managed install_data

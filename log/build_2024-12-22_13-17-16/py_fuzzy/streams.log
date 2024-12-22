@@ -1,0 +1,37 @@
+[0.574s] Invoking command in '/home/enesb/fuzzy_ws/src/py_fuzzy': PYTHONPATH=/home/enesb/fuzzy_ws/build/py_fuzzy/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/enesb/fuzzy_ws/install/py_fuzzy/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/py_fuzzy build --build-base /home/enesb/fuzzy_ws/build/py_fuzzy/build install --record /home/enesb/fuzzy_ws/build/py_fuzzy/install.log --single-version-externally-managed install_data
+[0.790s] running egg_info
+[0.791s] creating ../../build/py_fuzzy/py_fuzzy.egg-info
+[0.791s] writing ../../build/py_fuzzy/py_fuzzy.egg-info/PKG-INFO
+[0.791s] writing dependency_links to ../../build/py_fuzzy/py_fuzzy.egg-info/dependency_links.txt
+[0.791s] writing entry points to ../../build/py_fuzzy/py_fuzzy.egg-info/entry_points.txt
+[0.791s] writing requirements to ../../build/py_fuzzy/py_fuzzy.egg-info/requires.txt
+[0.792s] writing top-level names to ../../build/py_fuzzy/py_fuzzy.egg-info/top_level.txt
+[0.792s] writing manifest file '../../build/py_fuzzy/py_fuzzy.egg-info/SOURCES.txt'
+[0.793s] reading manifest file '../../build/py_fuzzy/py_fuzzy.egg-info/SOURCES.txt'
+[0.794s] writing manifest file '../../build/py_fuzzy/py_fuzzy.egg-info/SOURCES.txt'
+[0.794s] running build
+[0.794s] running build_py
+[0.794s] creating /home/enesb/fuzzy_ws/build/py_fuzzy/build
+[0.794s] creating /home/enesb/fuzzy_ws/build/py_fuzzy/build/lib
+[0.794s] creating /home/enesb/fuzzy_ws/build/py_fuzzy/build/lib/py_fuzzy
+[0.794s] copying py_fuzzy/__init__.py -> /home/enesb/fuzzy_ws/build/py_fuzzy/build/lib/py_fuzzy
+[0.794s] copying py_fuzzy/test.py -> /home/enesb/fuzzy_ws/build/py_fuzzy/build/lib/py_fuzzy
+[0.794s] running install
+[0.794s] running install_lib
+[0.795s] creating /home/enesb/fuzzy_ws/install/py_fuzzy/lib/python3.10/site-packages/py_fuzzy
+[0.795s] copying /home/enesb/fuzzy_ws/build/py_fuzzy/build/lib/py_fuzzy/__init__.py -> /home/enesb/fuzzy_ws/install/py_fuzzy/lib/python3.10/site-packages/py_fuzzy
+[0.795s] copying /home/enesb/fuzzy_ws/build/py_fuzzy/build/lib/py_fuzzy/test.py -> /home/enesb/fuzzy_ws/install/py_fuzzy/lib/python3.10/site-packages/py_fuzzy
+[0.795s] byte-compiling /home/enesb/fuzzy_ws/install/py_fuzzy/lib/python3.10/site-packages/py_fuzzy/__init__.py to __init__.cpython-310.pyc
+[0.796s] byte-compiling /home/enesb/fuzzy_ws/install/py_fuzzy/lib/python3.10/site-packages/py_fuzzy/test.py to test.cpython-310.pyc
+[0.796s] running install_data
+[0.796s] creating /home/enesb/fuzzy_ws/install/py_fuzzy/share/ament_index
+[0.796s] creating /home/enesb/fuzzy_ws/install/py_fuzzy/share/ament_index/resource_index
+[0.796s] creating /home/enesb/fuzzy_ws/install/py_fuzzy/share/ament_index/resource_index/packages
+[0.796s] copying resource/py_fuzzy -> /home/enesb/fuzzy_ws/install/py_fuzzy/share/ament_index/resource_index/packages
+[0.796s] copying package.xml -> /home/enesb/fuzzy_ws/install/py_fuzzy/share/py_fuzzy
+[0.796s] running install_egg_info
+[0.798s] Copying ../../build/py_fuzzy/py_fuzzy.egg-info to /home/enesb/fuzzy_ws/install/py_fuzzy/lib/python3.10/site-packages/py_fuzzy-0.0.0-py3.10.egg-info
+[0.799s] running install_scripts
+[0.814s] Installing cartpole_controller script to /home/enesb/fuzzy_ws/install/py_fuzzy/lib/py_fuzzy
+[0.814s] writing list of installed files to '/home/enesb/fuzzy_ws/build/py_fuzzy/install.log'
+[0.831s] Invoked command in '/home/enesb/fuzzy_ws/src/py_fuzzy' returned '0': PYTHONPATH=/home/enesb/fuzzy_ws/build/py_fuzzy/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/enesb/fuzzy_ws/install/py_fuzzy/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/py_fuzzy build --build-base /home/enesb/fuzzy_ws/build/py_fuzzy/build install --record /home/enesb/fuzzy_ws/build/py_fuzzy/install.log --single-version-externally-managed install_data

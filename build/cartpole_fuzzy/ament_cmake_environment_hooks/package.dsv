@@ -1,0 +1,4 @@
+source;share/cartpole_fuzzy/local_setup.bash
+source;share/cartpole_fuzzy/local_setup.dsv
+source;share/cartpole_fuzzy/local_setup.sh
+source;share/cartpole_fuzzy/local_setup.zsh
