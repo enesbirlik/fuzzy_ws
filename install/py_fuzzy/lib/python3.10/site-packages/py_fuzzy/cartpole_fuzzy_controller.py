@@ -27,51 +27,50 @@ class CartPoleFuzzyController(Node):
             10)
 
     def setup_fuzzy_controller(self):
+    
         # Evren tanımları
-        angle = ctrl.Antecedent(np.linspace(-30, 30, 300), 'angle')
-        angle_vel = ctrl.Antecedent(np.linspace(-300, 300, 300), 'angle_vel')
-        effort = ctrl.Consequent(np.linspace(-30, 30, 300), 'effort')
+        angle = ctrl.Antecedent(np.linspace(-15, 15, 300), 'angle')
+        angle_vel = ctrl.Antecedent(np.linspace(-150, 150, 300), 'angle_vel')
+        effort = ctrl.Consequent(np.linspace(-10, 10, 300), 'effort')
 
-        # Açı için üyelik fonksiyonları (±30 derece aralığında)
-        angle['NVVB'] = fuzz.trimf(angle.universe, [-30, -30, -25])    # Negatif Çok Çok Büyük
-        angle['NVB'] = fuzz.trimf(angle.universe, [-25, -20, -15])     # Negatif Çok Büyük
-        angle['NB'] = fuzz.trimf(angle.universe, [-20, -15, -10])      # Negatif Büyük
-        angle['NM'] = fuzz.trimf(angle.universe, [-15, -10, -5])       # Negatif Orta
-        angle['NS'] = fuzz.trimf(angle.universe, [-10, -5, -2])        # Negatif Küçük
-        angle['NSS'] = fuzz.trimf(angle.universe, [-5, -2.5, 0])       # Negatif Çok Küçük
-        angle['Z'] = fuzz.trimf(angle.universe, [-2.5, 0, 2.5])        # Sıfır
-        angle['PSS'] = fuzz.trimf(angle.universe, [0, 2.5, 5])         # Pozitif Çok Küçük
-        angle['PS'] = fuzz.trimf(angle.universe, [2, 5, 10])           # Pozitif Küçük
-        angle['PM'] = fuzz.trimf(angle.universe, [5, 10, 15])          # Pozitif Orta
-        angle['PB'] = fuzz.trimf(angle.universe, [10, 15, 20])         # Pozitif Büyük
-        angle['PVB'] = fuzz.trimf(angle.universe, [15, 20, 25])        # Pozitif Çok Büyük
-        angle['PVVB'] = fuzz.trimf(angle.universe, [25, 30, 30])       # Pozitif Çok Çok Büyük
+        # Açı için üyelik fonksiyonları (±15 derece)
+        angle['NVVB'] = fuzz.trimf(angle.universe, [-15, -15, -12])    # Negatif Çok Çok Büyük
+        angle['NVB'] = fuzz.trimf(angle.universe, [-13, -10, -7])      # Negatif Çok Büyük
+        angle['NB'] = fuzz.trimf(angle.universe, [-8, -6, -4])         # Negatif Büyük
+        angle['NM'] = fuzz.trimf(angle.universe, [-5, -3.5, -2])       # Negatif Orta
+        angle['NS'] = fuzz.trimf(angle.universe, [-3, -1.5, -0.5])     # Negatif Küçük
+        angle['Z'] = fuzz.trimf(angle.universe, [-1, 0, 1])            # Sıfır
+        angle['PS'] = fuzz.trimf(angle.universe, [0.5, 1.5, 3])        # Pozitif Küçük
+        angle['PM'] = fuzz.trimf(angle.universe, [2, 3.5, 5])          # Pozitif Orta
+        angle['PB'] = fuzz.trimf(angle.universe, [4, 6, 8])            # Pozitif Büyük
+        angle['PVB'] = fuzz.trimf(angle.universe, [7, 10, 13])         # Pozitif Çok Büyük
+        angle['PVVB'] = fuzz.trimf(angle.universe, [12, 15, 15])       # Pozitif Çok Çok Büyük
 
-        # Açısal hız için üyelik fonksiyonları
-        angle_vel['NVVB'] = fuzz.trimf(angle_vel.universe, [-300, -300, -240])  # Negatif Çok Çok Büyük
-        angle_vel['NVB'] = fuzz.trimf(angle_vel.universe, [-270, -210, -150])   # Negatif Çok Büyük
-        angle_vel['NB'] = fuzz.trimf(angle_vel.universe, [-180, -140, -100])    # Negatif Büyük
-        angle_vel['NM'] = fuzz.trimf(angle_vel.universe, [-120, -80, -40])      # Negatif Orta
-        angle_vel['NS'] = fuzz.trimf(angle_vel.universe, [-60, -30, -10])       # Negatif Küçük
-        angle_vel['Z'] = fuzz.trimf(angle_vel.universe, [-20, 0, 20])           # Sıfır
-        angle_vel['PS'] = fuzz.trimf(angle_vel.universe, [10, 30, 60])          # Pozitif Küçük
-        angle_vel['PM'] = fuzz.trimf(angle_vel.universe, [40, 80, 120])         # Pozitif Orta
-        angle_vel['PB'] = fuzz.trimf(angle_vel.universe, [100, 140, 180])       # Pozitif Büyük
-        angle_vel['PVB'] = fuzz.trimf(angle_vel.universe, [150, 210, 270])      # Pozitif Çok Büyük
-        angle_vel['PVVB'] = fuzz.trimf(angle_vel.universe, [240, 300, 300])     # Pozitif Çok Çok Büyük
+        # Açısal hız için üyelik fonksiyonları (±150 deg/s)
+        angle_vel['NVVB'] = fuzz.trimf(angle_vel.universe, [-150, -150, -120])  # Negatif Çok Çok Büyük
+        angle_vel['NVB'] = fuzz.trimf(angle_vel.universe, [-130, -100, -70])    # Negatif Çok Büyük
+        angle_vel['NB'] = fuzz.trimf(angle_vel.universe, [-80, -60, -40])       # Negatif Büyük
+        angle_vel['NM'] = fuzz.trimf(angle_vel.universe, [-50, -30, -15])       # Negatif Orta
+        angle_vel['NS'] = fuzz.trimf(angle_vel.universe, [-20, -10, -3])        # Negatif Küçük
+        angle_vel['Z'] = fuzz.trimf(angle_vel.universe, [-5, 0, 5])             # Sıfır
+        angle_vel['PS'] = fuzz.trimf(angle_vel.universe, [3, 10, 20])           # Pozitif Küçük
+        angle_vel['PM'] = fuzz.trimf(angle_vel.universe, [15, 30, 50])          # Pozitif Orta
+        angle_vel['PB'] = fuzz.trimf(angle_vel.universe, [40, 60, 80])          # Pozitif Büyük
+        angle_vel['PVB'] = fuzz.trimf(angle_vel.universe, [70, 100, 130])       # Pozitif Çok Büyük
+        angle_vel['PVVB'] = fuzz.trimf(angle_vel.universe, [120, 150, 150])     # Pozitif Çok Çok Büyük
 
-        # Effort için üyelik fonksiyonları (±30 N aralığında)
-        effort['NVVB'] = fuzz.trimf(effort.universe, [-30, -30, -24])    # Negatif Çok Çok Büyük
-        effort['NVB'] = fuzz.trimf(effort.universe, [-27, -21, -15])     # Negatif Çok Büyük
-        effort['NB'] = fuzz.trimf(effort.universe, [-18, -12, -6])       # Negatif Büyük
-        effort['NM'] = fuzz.trimf(effort.universe, [-9, -6, -3])         # Negatif Orta
-        effort['NS'] = fuzz.trimf(effort.universe, [-4.5, -2.25, -0.75]) # Negatif Küçük
-        effort['Z'] = fuzz.trimf(effort.universe, [-1.5, 0, 1.5])        # Sıfır
-        effort['PS'] = fuzz.trimf(effort.universe, [0.75, 2.25, 4.5])    # Pozitif Küçük
-        effort['PM'] = fuzz.trimf(effort.universe, [3, 6, 9])            # Pozitif Orta
-        effort['PB'] = fuzz.trimf(effort.universe, [6, 12, 18])          # Pozitif Büyük
-        effort['PVB'] = fuzz.trimf(effort.universe, [15, 21, 27])        # Pozitif Çok Büyük
-        effort['PVVB'] = fuzz.trimf(effort.universe, [24, 30, 30])       # Pozitif Çok Çok Büyük
+        # Effort için üyelik fonksiyonları (±10 N)
+        effort['NVVB'] = fuzz.trimf(effort.universe, [-10, -10, -8])     # Negatif Çok Çok Büyük
+        effort['NVB'] = fuzz.trimf(effort.universe, [-9, -7, -5])        # Negatif Çok Büyük
+        effort['NB'] = fuzz.trimf(effort.universe, [-6, -4, -2.5])       # Negatif Büyük
+        effort['NM'] = fuzz.trimf(effort.universe, [-3, -2, -1])         # Negatif Orta
+        effort['NS'] = fuzz.trimf(effort.universe, [-1.5, -0.75, -0.25]) # Negatif Küçük
+        effort['Z'] = fuzz.trimf(effort.universe, [-0.5, 0, 0.5])        # Sıfır
+        effort['PS'] = fuzz.trimf(effort.universe, [0.25, 0.75, 1.5])    # Pozitif Küçük
+        effort['PM'] = fuzz.trimf(effort.universe, [1, 2, 3])            # Pozitif Orta
+        effort['PB'] = fuzz.trimf(effort.universe, [2.5, 4, 6])          # Pozitif Büyük
+        effort['PVB'] = fuzz.trimf(effort.universe, [5, 7, 9])           # Pozitif Çok Büyük
+        effort['PVVB'] = fuzz.trimf(effort.universe, [8, 10, 10])        # Pozitif Çok Çok Büyük
 
         # Kural tabanı
         rules = [
@@ -156,15 +155,15 @@ class CartPoleFuzzyController(Node):
     def fuzzy_control(self, angle_deg, angle_vel_deg):
         try:
             # Giriş değerlerini sınırla
-            angle_deg = np.clip(angle_deg, -90, 90)
-            angle_vel_deg = np.clip(angle_vel_deg, -300, 300)
+            angle_deg = np.clip(angle_deg, -15, 15)         # Açıyı ±15 derece ile sınırla
+            angle_vel_deg = np.clip(angle_vel_deg, -150, 150)  # Açısal hızı ±150 deg/s ile sınırla
             
             self.fuzzy_simulation.input['angle'] = angle_deg
             self.fuzzy_simulation.input['angle_vel'] = angle_vel_deg
             
             self.fuzzy_simulation.compute()
             
-            return self.fuzzy_simulation.output['effort']
+            return np.clip(self.fuzzy_simulation.output['effort'], -10.0, 10.0)  # Effort'u ±10 N ile sınırla
         
         except Exception as e:
             self.get_logger().error(f'Fuzzy hesaplama hatası: {str(e)}')
