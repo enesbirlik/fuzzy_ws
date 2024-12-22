@@ -27,7 +27,6 @@ class CartPoleFuzzyController(Node):
             10)
 
     def setup_fuzzy_controller(self):
-    
         # Evren tanımları
         angle = ctrl.Antecedent(np.linspace(-15, 15, 300), 'angle')
         angle_vel = ctrl.Antecedent(np.linspace(-150, 150, 300), 'angle_vel')
@@ -79,17 +78,11 @@ class CartPoleFuzzyController(Node):
             ctrl.Rule(angle['Z'] & angle_vel['PS'], effort['NS']),
             ctrl.Rule(angle['Z'] & angle_vel['NS'], effort['PS']),
             
-            # Çok küçük sapmalar için kurallar
-            ctrl.Rule(angle['PSS'] & angle_vel['Z'], effort['NS']),
-            ctrl.Rule(angle['NSS'] & angle_vel['Z'], effort['PS']),
-            ctrl.Rule(angle['PSS'] & angle_vel['PS'], effort['NM']),
-            ctrl.Rule(angle['NSS'] & angle_vel['NS'], effort['PM']),
-            
             # Küçük sapmalar için kurallar
-            ctrl.Rule(angle['PS'] & angle_vel['Z'], effort['NM']),
-            ctrl.Rule(angle['NS'] & angle_vel['Z'], effort['PM']),
-            ctrl.Rule(angle['PS'] & angle_vel['PS'], effort['NB']),
-            ctrl.Rule(angle['NS'] & angle_vel['NS'], effort['PB']),
+            ctrl.Rule(angle['PS'] & angle_vel['Z'], effort['NS']),
+            ctrl.Rule(angle['NS'] & angle_vel['Z'], effort['PS']),
+            ctrl.Rule(angle['PS'] & angle_vel['PS'], effort['NM']),
+            ctrl.Rule(angle['NS'] & angle_vel['NS'], effort['PM']),
             
             # Orta sapmalar için kurallar
             ctrl.Rule(angle['PM'] & angle_vel['Z'], effort['NB']),
@@ -136,10 +129,10 @@ class CartPoleFuzzyController(Node):
             current_velocity_deg = self.rad_to_deg(msg.velocity[pole_index])
             
             control_output = self.fuzzy_control(current_angle_deg, current_velocity_deg)
-            control_output = np.clip(control_output, -30.0, 30.0)  # Effort'u ±30 ile sınırla
+            control_output = np.clip(control_output, -10.0, 10.0)  # Effort'u ±10 N ile sınırla
             
             cmd_msg = Float64MultiArray()
-            cmd_msg.data = [float(control_output)]
+            cmd_msg.data = [float(-control_output)]  # Çıkışın işaretini ters çevir
             self.effort_pub.publish(cmd_msg)
             
             # Detaylı log
@@ -163,7 +156,7 @@ class CartPoleFuzzyController(Node):
             
             self.fuzzy_simulation.compute()
             
-            return np.clip(self.fuzzy_simulation.output['effort'], -10.0, 10.0)  # Effort'u ±10 N ile sınırla
+            return self.fuzzy_simulation.output['effort']
         
         except Exception as e:
             self.get_logger().error(f'Fuzzy hesaplama hatası: {str(e)}')
