@@ -101,8 +101,11 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <sphere radius="0.05"/>
+        <sphere radius="0.025"/>
       </geometry>
+      <material name="red">
+        <color rgba="1 0 0 1"/>
+      </material>
     </visual>
   </link>
   
@@ -126,7 +129,7 @@
     <origin xyz="0 0 1.1"/>
     <axis xyz="0 1 0"/>
     <dynamics damping="0.0" friction="0.0"/>
-    <limit effort="1000.0" velocity="1000.0" lower="-1.50" upper="1.50"/> <!-- joint angle max min rad-->
+    <limit effort="1000.0" velocity="1000.0" lower="-1.57" upper="1.57"/> <!-- joint angle max min rad-->
   </joint>
 
   <joint name="pole_to_ball" type="fixed">
@@ -151,7 +154,7 @@
       <state_interface name="effort"/>
     </joint>
 
-    <!-- Sarkacın hareketini izleyen joint -->
+    <!-- pole movement joint -->
       <joint name="cart_to_pole">
           <state_interface name="position"/>
           <state_interface name="velocity"/>
