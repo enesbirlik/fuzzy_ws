@@ -69,7 +69,7 @@ def generate_launch_description():
             PythonLaunchDescriptionSource(
                 [os.path.join(get_package_share_directory('ros_gz_sim'),
                               'launch', 'gz_sim.launch.py')]),
-            launch_arguments=[('gz_args', ' -r -v 4 empty.sdf')],
+            launch_arguments=[('gz_args', ' -r -v 4 /home/enesb/fuzzy_ws/src/cartpole_fuzzy/worlds/my_world.sdf')],
         ),
         
         # Register Event Handlers

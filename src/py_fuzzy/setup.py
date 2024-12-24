@@ -22,6 +22,8 @@ setup(
         'console_scripts': [
             'cartpole_pid_controller = py_fuzzy.cartpole_pid_controller:main',
             'cartpole_fuzzy_controller = py_fuzzy.cartpole_fuzzy_controller:main',
+            'cartpole_data_plotter = py_fuzzy.cartpole_data_plotter:main',
+
         ],
     },
 )
