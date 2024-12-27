@@ -46,7 +46,8 @@ def generate_launch_description():
         output='screen',
         arguments=['-string', doc.toxml(),
                    '-name', 'cartpole',
-                   '-allow_renaming', 'true'],
+                   '-allow_renaming', 'true',
+                   '-J', 'cart_to_pole', '1.5'],
     )
 
     # Joint State Broadcaster

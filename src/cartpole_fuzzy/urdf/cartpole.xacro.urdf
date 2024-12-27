@@ -94,7 +94,6 @@
     <parent link="slideBar"/>
     <child link="cart"/>
     <limit effort="1000.0" lower="-15" upper="15" velocity="200"/>
-    <dynamics damping="0.0" friction="0.0"/>
   </joint>
 
  <link name="ball">
@@ -123,13 +122,13 @@
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
 
-  <joint name="cart_to_pole" type="revolute">
+  <joint name="cart_to_pole" type="continuous">
     <parent link="cart"/>
     <child link="pole"/>
     <origin xyz="0 0 1.1"/>
     <axis xyz="0 1 0"/>
     <dynamics damping="0.0" friction="0.0"/>
-    <limit effort="1000.0" velocity="1000.0" lower="-1.57" upper="1.57"/> <!-- joint angle max min rad-->
+    <limit effort="1000.0" velocity="1000.0"/> <!-- joint angle max min rad-->
   </joint>
 
   <joint name="pole_to_ball" type="fixed">
