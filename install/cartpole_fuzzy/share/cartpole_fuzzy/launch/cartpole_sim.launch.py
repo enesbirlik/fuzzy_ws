@@ -1,1 +1,0 @@
-/home/enesb/fuzzy_ws/src/cartpole_fuzzy/launch/cartpole_sim.launch.py

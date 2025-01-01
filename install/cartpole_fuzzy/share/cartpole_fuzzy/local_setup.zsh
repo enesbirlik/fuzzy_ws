@@ -1,1 +1,0 @@
-/home/enesb/fuzzy_ws/build/cartpole_fuzzy/ament_cmake_environment_hooks/local_setup.zsh
