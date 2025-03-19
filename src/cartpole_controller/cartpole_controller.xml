@@ -1,0 +1,10 @@
+
+<library path="cartpole_controller">
+  <class name="cartpole_controller/CartpoleHardwareInterface"
+         type="cartpole_controller::CartpoleHardwareInterface"
+         base_class_type="hardware_interface::SystemInterface">
+    <description>
+      Hardware Interface for Cartpole physical system
+    </description>
+  </class>
+</library>

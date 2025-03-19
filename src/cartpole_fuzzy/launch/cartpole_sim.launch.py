@@ -12,71 +12,88 @@ from ament_index_python.packages import get_package_share_directory
 def generate_launch_description():
     # Launch Arguments
     use_sim_time = LaunchConfiguration('use_sim_time', default='true')
-
-    cartpole_fuzzy_path = os.path.join(
-        get_package_share_directory('cartpole_fuzzy'))
-
-    xacro_file = os.path.join(cartpole_fuzzy_path,
-                              'urdf',
-                              'cartpole.xacro.urdf')
-
-    # Parse Xacro file
-    with open(xacro_file, 'r') as file:
-        doc = xacro.parse(file)
-    xacro.process_doc(doc)
-    params = {'robot_description': doc.toxml()}
-
-    node_robot_state_publisher = Node(
+    
+    # Get package share directory as a string
+    cartpole_fuzzy_share = get_package_share_directory('cartpole_fuzzy')
+    
+    # URDF/XACRO file path (full string path)
+    xacro_path = os.path.join(cartpole_fuzzy_share, 'urdf', 'cartpole.xacro.urdf')
+    
+    # Parse XACRO file
+    robot_description_content = xacro.process_file(xacro_path).toxml()
+    robot_description = {'robot_description': robot_description_content}
+    
+    # Robot State Publisher
+    robot_state_publisher = Node(
         package='robot_state_publisher',
         executable='robot_state_publisher',
         output='screen',
-        parameters=[params]
+        parameters=[robot_description, {'use_sim_time': use_sim_time}]
     )
 
-    node_joint_state_publisher = Node(
+    # Joint State Publisher
+    joint_state_publisher = Node(
         package='joint_state_publisher',
         executable='joint_state_publisher',
         output='screen',
         parameters=[{'use_sim_time': use_sim_time}]
     )
 
-    ignition_spawn_entity = Node(
-        package='ros_gz_sim',
-        executable='create',
+    # Spawn entity in Gazebo
+    spawn_entity = Node(
+        package='gazebo_ros',
+        executable='spawn_entity.py',
         output='screen',
-        arguments=['-string', doc.toxml(),
-                   '-name', 'cartpole',
-                   '-allow_renaming', 'true',
-                   '-J', 'cart_to_pole', '1.5'],
+        arguments=[
+            '-topic', 'robot_description',
+            '-entity', 'cartpole'
+        ],
     )
 
-    # Joint State Broadcaster
+    # Load joint state broadcaster
     load_joint_state_broadcaster = ExecuteProcess(
         cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
              'joint_state_broadcaster'],
         output='screen'
     )
 
-    # Effort Controller
+    # Load effort controllers
     load_effort_controller = ExecuteProcess(
         cmd=['ros2', 'control', 'load_controller', '--set-state', 'active', 
              'effort_controllers'],
         output='screen'
     )
 
+    # Launch Gazebo with empty world
+    gazebo = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([
+            os.path.join(get_package_share_directory('gazebo_ros'), 
+                'launch', 'gazebo.launch.py')
+        ]),
+        launch_arguments=[
+            ('verbose', 'false')
+        ]
+    )
+
     return LaunchDescription([
-        # Launch gazebo environment
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                [os.path.join(get_package_share_directory('ros_gz_sim'),
-                              'launch', 'gz_sim.launch.py')]),
-            launch_arguments=[('gz_args', ' -r -v 4 /home/enesb/fuzzy_ws/src/cartpole_fuzzy/worlds/my_world.sdf')],
-        ),
+        # Launch Arguments
+        DeclareLaunchArgument(
+            'use_sim_time',
+            default_value='true',
+            description='Use simulation (Gazebo) clock if true'),
         
-        # Register Event Handlers
+        # Launch Gazebo
+        gazebo,
+        
+        # Launch Nodes
+        robot_state_publisher,
+        joint_state_publisher,
+        spawn_entity,
+        
+        # Event Handlers for Controller Loading
         RegisterEventHandler(
             event_handler=OnProcessExit(
-                target_action=ignition_spawn_entity,
+                target_action=spawn_entity,
                 on_exit=[load_joint_state_broadcaster],
             )
         ),
@@ -86,15 +103,4 @@ def generate_launch_description():
                 on_exit=[load_effort_controller],
             )
         ),
-        
-        # Nodes
-        node_robot_state_publisher,
-        node_joint_state_publisher,
-        ignition_spawn_entity,
-        
-        # Launch Arguments
-        DeclareLaunchArgument(
-            'use_sim_time',
-            default_value='true',
-            description='If true, use simulated clock'),
     ])
