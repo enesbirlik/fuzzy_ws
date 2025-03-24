@@ -1,0 +1,40 @@
+controller_manager:
+  ros__parameters:
+    update_rate: 10
+
+    cart_position_controller:
+      type: position_controllers/JointGroupPositionController
+
+    cart_velocity_controller:
+      type: velocity_controllers/JointGroupVelocityController
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+cart_position_controller:
+  ros__parameters:
+    joints:
+      - slider_to_cart
+      
+    command_interfaces:
+      - position
+
+    state_interfaces:
+      - position
+      - velocity
+
+    open_loop_control: true 
+
+cart_velocity_controller:
+  ros__parameters:
+    joints:
+      - slider_to_cart
+
+    command_interfaces:
+      - velocity
+
+    state_interfaces:
+      - position
+      - velocity
+
+    open_loop_control: true

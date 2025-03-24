@@ -1,68 +1,111 @@
 import os
-import xacro
-
-from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, ExecuteProcess
-from launch.substitutions import LaunchConfiguration
-from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
 
+from launch import LaunchDescription
+from launch.substitutions import Command, LaunchConfiguration
+from launch_ros.actions import Node
+from launch_ros.parameter_descriptions import ParameterValue
+
+from launch.actions import DeclareLaunchArgument
+from launch.conditions import UnlessCondition, IfCondition
+from launch.substitutions import PythonExpression
+
 def generate_launch_description():
-    # Launch Arguments
-    use_sim_time = LaunchConfiguration('use_sim_time', default='false')
     
-    # Get package share directory as a string
-    cartpole_fuzzy_share = get_package_share_directory('cartpole_fuzzy')
+    # Simülasyon modu argümanı
+    is_sim_arg = DeclareLaunchArgument(
+        "is_sim",
+        default_value="true",  # Varsayılan olarak simülasyon modu açık
+        description="Run in simulation mode"
+    )
+
+    # Controller tipi argümanı
+    controller_type_arg = DeclareLaunchArgument(
+        "controller_type",
+        default_value="position",  # Varsayılan olarak pozisyon kontrolü seçili
+        description="Controller type: 'position' or 'velocity'"
+    )
+
+    # Launch parametrelerini oku
+    is_sim = LaunchConfiguration("is_sim")
+    controller_type = LaunchConfiguration("controller_type")
+
+    # URDF dosyasını oluştur
+    robot_description = ParameterValue(
+        Command([
+            "xacro",
+            os.path.join(get_package_share_directory("cartpole_description"), "urdf", "cartpole.urdf.xacro"),
+            " is_sim:=True"
+        ]),
+        value_type=str
+    )
     
-    # URDF/XACRO file path (full string path)
-    xacro_path = os.path.join(cartpole_fuzzy_share, 'urdf', 'cartpole.xacro.urdf')
-    
-    # Parse XACRO file
-    robot_description_content = xacro.process_file(xacro_path).toxml()
-    robot_description = {'robot_description': robot_description_content}
-    
-    # Robot State Publisher
     robot_state_publisher = Node(
-        package='robot_state_publisher',
-        executable='robot_state_publisher',
-        output='screen',
-        parameters=[robot_description, {'use_sim_time': use_sim_time}]
+        package="robot_state_publisher",
+        executable="robot_state_publisher",
+        parameters=[{"robot_description": robot_description}],
+        condition=UnlessCondition(is_sim)
     )
 
-    # Controller Manager
     controller_manager = Node(
-        package='controller_manager',
-        executable='ros2_control_node',
+        package="controller_manager",
+        executable="ros2_control_node",
         parameters=[
-            robot_description,
-            os.path.join(cartpole_fuzzy_share, 'config', 'cartpole_controller_effort.yaml')
+            {"robot_description": robot_description,
+             "use_sim_time": PythonExpression(["'", is_sim, "' == 'true'"])},  # Doğru tipte değer döndürmesi için düzeltildi
+            os.path.join(
+                get_package_share_directory("cartpole_controller"),
+                "config",
+                "cartpole_controllers.yaml"
+            )
         ],
-        output='screen',
+        condition=UnlessCondition(is_sim)  # Sadece gerçek donanımda çalıştır
     )
 
-    # Load Controllers
-    load_joint_state_broadcaster = ExecuteProcess(
-        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
-             'joint_state_broadcaster'],
-        output='screen'
+    # Load Joint State Broadcaster (Her iki modda da çalıştır)
+    load_joint_state_broadcaster = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=[
+            "joint_state_broadcaster",
+            "--controller-manager",
+            "/controller_manager"
+        ]
     )
 
-    load_effort_controller = ExecuteProcess(
-        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active', 
-             'effort_controllers'],
-        output='screen'
+    # Load Position Controller (Eğer `controller_type` "position" ise çalıştır)
+    load_position_controller = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=[
+            "cart_position_controller",
+            "--controller-manager",
+            "/controller_manager"
+        ],
+        condition=IfCondition(PythonExpression(["'", controller_type, "' == 'position'"]))  # Düzeltildi
+    )
+
+    # Load Velocity Controller (Eğer `controller_type` "velocity" ise çalıştır)
+    load_velocity_controller = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=[
+            "cart_velocity_controller",
+            "--controller-manager",
+            "/controller_manager"
+        ],
+        condition=IfCondition(PythonExpression(["'", controller_type, "' == 'velocity'"]))  # Düzeltildi
     )
 
     return LaunchDescription([
         # Launch Arguments
-        DeclareLaunchArgument(
-            'use_sim_time',
-            default_value='false',
-            description='Use simulation clock if true'),
+        is_sim_arg,
+        controller_type_arg,
         
         # Launch Nodes
         robot_state_publisher,
         controller_manager,
         load_joint_state_broadcaster,
-        load_effort_controller,
+        load_position_controller,
+        load_velocity_controller,
     ])
