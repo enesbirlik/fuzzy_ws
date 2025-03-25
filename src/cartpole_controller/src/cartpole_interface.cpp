@@ -12,6 +12,15 @@
 #include <string>
 #include <sstream>
 
+const float PoleEncoderRes =4096;
+const float CartEncoderRes = 8417;
+const float CartReductionRatio = 131;
+const float CartShaftRadius = 0.033/2;
+const float CartLength = 0.47;
+
+const float PoleRadConst = 2*M_PI/PoleEncoderRes;
+const float CartPosConst = CartLength/CartEncoderRes;
+
 namespace cartpole_controller {
 
 CartpoleHardwareInterface::CartpoleHardwareInterface()
@@ -165,9 +174,9 @@ hardware_interface::return_type CartpoleHardwareInterface::read(const rclcpp::Ti
 
     // Assign values to state interfaces
     if (!has_nan && hw_positions_.size() >= 2 && hw_velocities_.size() >= 2) {
-            hw_positions_[0] = values[0];  // Cart position
+            hw_positions_[0] = values[0] * -1 * CartPosConst;  // Cart position
             hw_velocities_[0] = values[1]; // Cart velocity
-            hw_positions_[1] = values[2];  // Pole angle
+            hw_positions_[1] = values[2] * -1 * PoleRadConst;  // Pole angle
             hw_velocities_[1] = values[3]; // Pole angular velocity
             
             RCLCPP_DEBUG(rclcpp::get_logger("CartpoleHardwareInterface"),
