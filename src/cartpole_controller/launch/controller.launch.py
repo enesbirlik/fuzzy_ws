@@ -22,8 +22,8 @@ def generate_launch_description():
     # Controller tipi argümanı
     controller_type_arg = DeclareLaunchArgument(
         "controller_type",
-        default_value="position",  # Varsayılan olarak pozisyon kontrolü seçili
-        description="Controller type: 'position' or 'velocity'"
+        default_value="effort",  # Varsayılan olarak pozisyon kontrolü seçili
+        description="Controller type: 'position' or 'velocity or 'effort'"
     )
 
     # Launch parametrelerini oku
@@ -35,7 +35,7 @@ def generate_launch_description():
         Command([
             "xacro",
             os.path.join(get_package_share_directory("cartpole_description"), "urdf", "cartpole.urdf.xacro"),
-            " is_sim:=True"
+            " is_sim:=False"
         ]),
         value_type=str
     )
@@ -82,7 +82,7 @@ def generate_launch_description():
             "--controller-manager",
             "/controller_manager"
         ],
-        condition=IfCondition(PythonExpression(["'", controller_type, "' == 'position'"]))  # Düzeltildi
+        condition=IfCondition(PythonExpression(["'", controller_type, "' == 'position'"]))
     )
 
     # Load Velocity Controller (Eğer `controller_type` "velocity" ise çalıştır)
@@ -94,7 +94,19 @@ def generate_launch_description():
             "--controller-manager",
             "/controller_manager"
         ],
-        condition=IfCondition(PythonExpression(["'", controller_type, "' == 'velocity'"]))  # Düzeltildi
+        condition=IfCondition(PythonExpression(["'", controller_type, "' == 'velocity'"]))
+    )
+
+    # Load Effort Controller (Eğer `controller_type` "effort" ise çalıştır)
+    load_effort_controller = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=[
+            "cart_effort_controller",
+            "--controller-manager",
+            "/controller_manager"
+        ],
+        condition=IfCondition(PythonExpression(["'", controller_type, "' == 'effort'"]))
     )
 
     return LaunchDescription([
@@ -108,4 +120,5 @@ def generate_launch_description():
         load_joint_state_broadcaster,
         load_position_controller,
         load_velocity_controller,
+        load_effort_controller,
     ])
