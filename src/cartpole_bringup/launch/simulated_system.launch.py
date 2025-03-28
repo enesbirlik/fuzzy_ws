@@ -8,7 +8,7 @@ from ament_index_python.packages import get_package_share_directory
 def generate_launch_description():
     controller_type_arg = DeclareLaunchArgument(
         'controller_type',
-        default_value='velocity',
+        default_value='effort',
         description='Controller type: position or velocity or effort'
     )
     controller_type = LaunchConfiguration("controller_type")
