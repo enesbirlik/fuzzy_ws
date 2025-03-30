@@ -1,6 +1,8 @@
 import sys
 import time
 import argparse
+import math
+
 
 import rclpy
 from rclpy.node import Node
@@ -10,12 +12,18 @@ from std_msgs.msg import Float64MultiArray
 from PyQt5 import QtWidgets, QtCore
 import pyqtgraph as pg
 
+def wrap_to_range(x, min_val=-3.14, max_val=3.14):
+    range_width = max_val - min_val
+    wrapped = math.fmod(x - min_val, range_width)
+    if (wrapped < 0):
+        wrapped += range_width
+    return wrapped + min_val
+
 class CartpoleGUI(Node):
     def __init__(self, controller_type='position'):
         super().__init__('cartpole_gui')
         self.controller_type = controller_type
 
-        # Controller tipine göre uygun konu ve ölçek faktörünü belirleyelim
         if self.controller_type == 'position':
             self.cmd_topic = '/cart_position_controller/commands'
             self.scale = 0.235
@@ -24,7 +32,7 @@ class CartpoleGUI(Node):
             self.scale = 1.0
         elif self.controller_type == 'effort':
             self.cmd_topic = '/cart_effort_controller/commands'
-            self.scale = 1.0   # Önceki 0.1 yerine 0.2 yapıldı; slider -100..100 => -20..20
+            self.scale = 5.5   # İstediğiniz değere göre değiştirebilirsiniz
         else:
             self.cmd_topic = '/cart_position_controller/commands'
             self.scale = 0.235
@@ -32,7 +40,6 @@ class CartpoleGUI(Node):
         self.cmd_pub = self.create_publisher(Float64MultiArray, self.cmd_topic, 10)
         self.joint_state_sub = self.create_subscription(JointState, '/joint_states', self.joint_state_callback, 10)
 
-        # Joint state değerleri
         self.cart_pos = 0.0
         self.cart_vel = 0.0
         self.cart_effort = 0.0
@@ -41,7 +48,6 @@ class CartpoleGUI(Node):
         self.pole_vel = 0.0
         self.pole_effort = 0.0
 
-        # Grafik verileri
         self.time_data = []
         self.cart_pos_data = []
         self.cart_vel_data = []
@@ -54,14 +60,12 @@ class CartpoleGUI(Node):
         self.start_time = time.time()
 
     def joint_state_callback(self, msg: JointState):
-        # "slider_to_cart" joint bilgileri
         if "slider_to_cart" in msg.name:
             idx_cart = msg.name.index("slider_to_cart")
             self.cart_pos = msg.position[idx_cart]
             self.cart_vel = msg.velocity[idx_cart]
             if len(msg.effort) > idx_cart:
                 self.cart_effort = msg.effort[idx_cart]
-        # "cart_to_pole" joint bilgileri
         if "cart_to_pole" in msg.name:
             idx_pole = msg.name.index("cart_to_pole")
             self.pole_pos = msg.position[idx_pole]
@@ -104,7 +108,6 @@ class MainWindow(QtWidgets.QWidget):
 
         main_layout = QtWidgets.QVBoxLayout()
 
-        # Komut gönderme alanı
         cmd_layout = QtWidgets.QHBoxLayout()
         if self.ros_node.controller_type == 'position':
             self.command_label = QtWidgets.QLabel('Position Command:')
@@ -122,21 +125,24 @@ class MainWindow(QtWidgets.QWidget):
 
         send_button = QtWidgets.QPushButton('Send Command')
         send_button.clicked.connect(self.send_command)
+        
+        # Reset butonu ekleyelim
+        reset_button = QtWidgets.QPushButton('Reset Graphs')
+        reset_button.clicked.connect(self.reset_graphs)
 
         cmd_layout.addWidget(self.command_label)
         cmd_layout.addWidget(self.command_slider)
         cmd_layout.addWidget(self.command_value_label)
         cmd_layout.addWidget(send_button)
+        cmd_layout.addWidget(reset_button)
         main_layout.addLayout(cmd_layout)
 
-        # Joint state metin kutusu (üst kısım)
         main_layout.addWidget(QtWidgets.QLabel("Joint States (position, velocity, effort):"))
         self.joint_state_display = QtWidgets.QTextEdit()
         self.joint_state_display.setReadOnly(True)
         self.joint_state_display.setMaximumHeight(60)
         main_layout.addWidget(self.joint_state_display)
 
-        # Grafik alanı: 6 grafik
         self.graph_widget = pg.GraphicsLayoutWidget()
         main_layout.addWidget(self.graph_widget, 1)
 
@@ -169,6 +175,16 @@ class MainWindow(QtWidgets.QWidget):
         command_val = (value / 100.0) * self.ros_node.scale
         self.ros_node.send_command(command_val)
 
+    def reset_graphs(self):
+        # Grafik verilerini sıfırlayalım
+        self.ros_node.time_data = []
+        self.ros_node.cart_pos_data = []
+        self.ros_node.cart_vel_data = []
+        self.ros_node.cart_effort_data = []
+        self.ros_node.pole_pos_data = []
+        self.ros_node.pole_vel_data = []
+        self.ros_node.pole_effort_data = []
+
     def update_displays(self):
         text = (
             f"Cart Position: {self.ros_node.cart_pos:.3f}, "
@@ -181,9 +197,11 @@ class MainWindow(QtWidgets.QWidget):
         self.joint_state_display.setPlainText(text)
 
         t = self.ros_node.time_data
+        # Normalize pole position values to [-pi, pi]
+        norm_pole_pos = [wrap_to_range(p) for p in self.ros_node.pole_pos_data]
         self.plot_cart_pos_data.setData(t, self.ros_node.cart_pos_data)
         self.plot_cart_vel_data.setData(t, self.ros_node.cart_vel_data)
-        self.plot_pole_pos_data.setData(t, self.ros_node.pole_pos_data)
+        self.plot_pole_pos_data.setData(t, norm_pole_pos)
         self.plot_pole_vel_data.setData(t, self.ros_node.pole_vel_data)
         self.plot_cart_effort_data.setData(t, self.ros_node.cart_effort_data)
         self.plot_pole_effort_data.setData(t, self.ros_node.pole_effort_data)

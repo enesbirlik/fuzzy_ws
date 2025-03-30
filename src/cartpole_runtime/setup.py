@@ -21,7 +21,7 @@ setup(
     entry_points={
         'console_scripts': [
             'cartpole_gui = cartpole_runtime.cartpole_gui:main',
-            'energy_controller = cartpole_runtime.energy_controller:main',
+            'pid_controller = cartpole_runtime.pid_controller:main',
             'lqr_controller = cartpole_runtime.lqr_controller:main',
             'fuzzy_controller = cartpole_runtime.fuzzy_controller:main',
         ],
