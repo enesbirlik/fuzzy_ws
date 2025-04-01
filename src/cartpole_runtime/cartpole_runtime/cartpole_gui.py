@@ -60,14 +60,14 @@ class CartpoleGUI(Node):
         self.start_time = time.time()
 
     def joint_state_callback(self, msg: JointState):
-        if "slider_to_cart" in msg.name:
-            idx_cart = msg.name.index("slider_to_cart")
+        if "cart_joint" in msg.name:
+            idx_cart = msg.name.index("cart_joint")
             self.cart_pos = msg.position[idx_cart]
             self.cart_vel = msg.velocity[idx_cart]
             if len(msg.effort) > idx_cart:
                 self.cart_effort = msg.effort[idx_cart]
-        if "cart_to_pole" in msg.name:
-            idx_pole = msg.name.index("cart_to_pole")
+        if "pole_joint" in msg.name:
+            idx_pole = msg.name.index("pole_joint")
             self.pole_pos = msg.position[idx_pole]
             self.pole_vel = msg.velocity[idx_pole]
             if len(msg.effort) > idx_pole:

@@ -11,7 +11,7 @@ from launch_ros.parameter_descriptions import ParameterValue
 def generate_launch_description():
     model_arg = DeclareLaunchArgument(
         name="model",
-        default_value=os.path.join(get_package_share_directory("cartpole_description"), "urdf", "cartpole.urdf.xacro"),
+        default_value=os.path.join(get_package_share_directory("cartpole_description"), "robot", "cartpole.urdf.xacro"),
         description="Absolute path to the robot URDF file"
     )
 

@@ -34,7 +34,7 @@ def generate_launch_description():
     robot_description = ParameterValue(
         Command([
             "xacro",
-            os.path.join(get_package_share_directory("cartpole_description"), "urdf", "cartpole.urdf.xacro"),
+            os.path.join(get_package_share_directory("cartpole_description"), "robot", "cartpole.urdf.xacro"),
             " is_sim:=False"
         ]),
         value_type=str

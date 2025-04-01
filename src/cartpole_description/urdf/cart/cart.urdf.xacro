@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <xacro:include filename="$(find cartpole_description)/urdf/cart/cart.transmission.xacro"/>
+  <xacro:include filename="$(find cartpole_description)/urdf/cart/cart.gazebo.xacro"/>
+  <xacro:include filename="$(find cartpole_description)/urdf/cart/cart.control.xacro"/>
+  
+  <xacro:macro name="cart_v0" params="parent *joint_origin *joint_axis">
+	<joint name="cart_joint" type="prismatic">
+	  <xacro:insert_block name="joint_origin"/>
+	  <parent link="${parent}"/>
+	  <child link="cart_link"/>
+          <limit effort="30" velocity="10" lower="-0.235" upper = "0.235"/>
+          <dynamics damping="0.005" friction="0.1"/> 
+	  <xacro:insert_block name="joint_axis"/>
+	</joint>
+
+    <link name="cart_link">
+      <visual>
+        <geometry>
+          <box size="0.1 0.1 0.04"/>
+        </geometry>
+        <origin xyz="0 0 0"/>
+        <material name="blue"/>
+      </visual>
+      <collision>
+        <geometry>
+          <box size="0.1 0.1 0.04"/>
+        </geometry>
+        <origin xyz="0 0 0"/>
+      </collision>
+      <inertial>
+        <origin xyz="0 0 0"/>
+        <mass value="1"/>
+        <inertia ixx="0.1" ixy="0.0" ixz="0.0" iyy="0.1" iyz="0.0" izz="0.1"/>
+      </inertial>
+    </link>
+  </xacro:macro>
+  
+</robot>

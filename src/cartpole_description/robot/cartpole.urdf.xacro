@@ -1,0 +1,93 @@
+<?xml version="1.0"?>
+<robot name="cart_pole" xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <xacro:property name="M_PI" value="3.14159274"/>
+
+  <xacro:arg name="is_sim" default="true"/>
+
+  <xacro:include filename="$(find cartpole_description)/urdf/base/base.urdf.xacro"/>
+  <xacro:include filename="$(find cartpole_description)/urdf/cart/cart.urdf.xacro"/>
+  <xacro:include filename="$(find cartpole_description)/urdf/pole/pole.urdf.xacro"/>
+  <xacro:include filename="$(find cartpole_description)/urdf/tip/tip.urdf.xacro"/>
+
+  <material name="red">
+    <color rgba="1.0 0.0 0.0 1.0"/>
+  </material>
+  
+  <material name="green">
+    <color rgba="0.0 1.0 0.0 1.0"/>
+  </material>
+  
+  <material name="blue">
+    <color rgba="0.0 0.0 1.0 1.0"/>
+  </material>
+  
+  <material name="gray">
+    <color rgba="0.5 0.5 0.5 1.0"/>
+  </material>
+
+  <!-- =============== Link & Joint =============== -->
+  <!-- Base -->
+  <link name="world"/>
+  <xacro:base_v0 parent="world">
+	<origin xyz="0 0 0.5"/>
+  </xacro:base_v0>
+
+  <!-- Yaw_joint -->
+  <xacro:cart_v0 parent="base_link">
+	<origin xyz="0 0 0.045" rpy="0 0 0"/>
+	<axis xyz="1 0 0"/>
+  </xacro:cart_v0>
+
+  <!-- Pitch_joint -->
+  <xacro:pole_v0 parent="cart_link">
+	<origin xyz="0 0.06 0.02" rpy="0 ${M_PI} 0"/>
+	<axis xyz="0 1 0"/>
+  </xacro:pole_v0> 
+
+  <xacro:tip_v0 parent="pole_link">
+    <origin xyz="0 0 -0.24" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+  </xacro:tip_v0>
+
+  <!-- =============== Control =============== -->
+  <ros2_control name="RobotSystem" type="system">
+
+    <xacro:if value="$(arg is_sim)">
+      <hardware>
+        <plugin>gazebo_ros2_control/GazeboSystem</plugin>
+      </hardware>
+    </xacro:if>
+
+    <xacro:unless value="$(arg is_sim)">
+      <hardware>
+        <plugin>cartpole_controller/CartpoleHardwareInterface</plugin>
+        <param name="device_path">/dev/ttyUSB0</param>
+        <param name="baud_rate">115200</param>
+      </hardware>
+    </xacro:unless>
+
+    <xacro:pole_control_v0/>
+    <xacro:cart_control_v0/>
+
+  </ros2_control>
+
+
+  <!-- =============== Transmissions =============== -->
+  <xacro:cart_trans_v0/>
+
+  <!-- =============== Gazebo =============== -->
+  <gazebo>    
+    <plugin filename="libgazebo_ros2_control.so" name="gazebo_ros2_control">
+      <parameters>$(find cartpole_controller)/config/cartpole_controllers.yaml</parameters>
+    </plugin>
+  </gazebo>
+
+
+
+  <xacro:base_gazebo_v0/>
+  <xacro:cart_gazebo_v0/>
+  <xacro:pole_gazebo_v0/>
+  <xacro:tip_gazebo_v0/>
+
+</robot>
