@@ -53,6 +53,17 @@ def generate_launch_description():
         output='screen'
     )
 
+    #rviz configuration /home/enesb/.rviz2
+    rviz_config_dir = '/home/enesb/.rviz2/cartpole.rviz'
+    rviz_node = Node(
+        package='rviz2',
+        executable='rviz2',
+        name='rviz2',
+        output='screen',
+        arguments=['-d', rviz_config_dir],
+        parameters=[robot_description, {'use_sim_time': use_sim_time}]
+    )
+
     return LaunchDescription([
         # Launch Arguments
         DeclareLaunchArgument(
@@ -65,4 +76,5 @@ def generate_launch_description():
         controller_manager,
         load_joint_state_broadcaster,
         load_effort_controller,
+        rviz_node
     ])

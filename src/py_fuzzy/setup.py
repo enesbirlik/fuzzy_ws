@@ -23,7 +23,11 @@ setup(
             'cartpole_pid_controller = py_fuzzy.cartpole_pid_controller:main',
             'cartpole_fuzzy_controller = py_fuzzy.cartpole_fuzzy_controller:main',
             'cartpole_data_plotter = py_fuzzy.cartpole_data_plotter:main',
-            'cartpole_lookup_controller = py_fuzzy.cartpole_lookup_controller:main'
+            'cartpole_lookup_controller = py_fuzzy.cartpole_lookup_controller:main',
+            'cartpole_rl = py_fuzzy.rl_test:main',
+            'cartpole_mpc = py_fuzzy.cartpole_mpc:main',
+            'cartpole_gui = py_fuzzy.cartpole_gui:main',
+            'cartpole_adaptive = py_fuzzy.cartpole_adaptive:main',
 
         ],
     },

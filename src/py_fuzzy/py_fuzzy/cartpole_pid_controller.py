@@ -1,441 +1,236 @@
-#!/usr/bin/env python3
+import math
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Float64MultiArray
 from sensor_msgs.msg import JointState
-import math
-import numpy as np
+from std_msgs.msg import Float64MultiArray, Bool
 import threading
-import time
-import os
-import sys
-import curses
 
-class CartpoleBalanceController(Node):
+class DualPIDController(Node):
     def __init__(self):
-        super().__init__('cartpole_balance_controller')
-        
-        # PID Control Parameters
-        self.Kp_angle = 15.0
-        self.Ki_angle = 0.1
-        self.Kd_angle = 3.0
-        
-        self.Kp_pos = 4.0
-        self.Ki_pos = 0.01
-        self.Kd_pos = 1.5
-        
-        # Adaptive gain parameters
-        self.adaptive_enabled = True
-        self.adaptive_scale_p = 0.7
-        self.adaptive_scale_i = 0.5
-        self.adaptive_scale_d = 1.2
-        
-        # Control Weights
-        self.angle_weight = 0.85
-        self.pos_weight = 0.15
-        
-        # Cart Limits
-        self.cart_limit = 0.3
-        
-        # System state
-        self.cart_pos = 0.0
-        self.cart_vel = 0.0
-        self.pole_angle = 0.0
-        self.pole_vel = 0.0
-        self.angle_deg = 0.0
-        
-        # Controller variables
-        self.angle_integral = 0.0
-        self.pos_integral = 0.0
-        self.prev_time = self.get_clock().now()
-        self.control_started = False
-        self.paused = False
-        self.centering_cart = False
-        self.force_output = 0.0
-        
-        # Status messages
-        self.status_message = "Başlangıç bekleniyor"
-        self.last_key_message = ""
-        
-        # ROS2 communication
-        self.state_sub = self.create_subscription(
+        super().__init__('dual_pid_controller')
+
+        # Subscribe to joint states
+        self.subscription = self.create_subscription(
             JointState,
             '/joint_states',
-            self.state_callback,
-            10)
-            
-        self.command_pub = self.create_publisher(
+            self.joint_state_callback,
+            10
+        )
+
+        # Publisher for effort commands (single interface)
+        self.publisher = self.create_publisher(
             Float64MultiArray,
             '/effort_controllers/commands',
-            10)
-            
-        # Control loop - 100Hz
-        self.timer = self.create_timer(0.01, self.control_callback)
+            10
+        )
+
+        # PID gains for pole
+        self.kp_pole = 1500.0
+        self.ki_pole = 50.0
+        self.kd_pole = 150.0
+        self.desired_pole_angle = -math.pi  # Target angle
+
+        # PID gains for cart (unused if single joint)
+        self.kp_cart = 100.0
+        self.ki_cart = 10.0
+        self.kd_cart = 20.0
+        self.desired_cart_position = 0.0
+
+        # State storage
+        self.current_pole_angle = None
+        self.current_cart_position = None
+        self.current_cart_velocity = None
+        self.pole_integral = 0.0
+        self.pole_last_error = 0.0
+        self.cart_integral = 0.0
+        self.cart_last_error = 0.0
+
+        # Safety parameters
+        self.safety_active = False
+        self.max_angle_error = math.radians(45)  # 45 degrees in radians
+        self.max_cart_position = 0.18  # Cart position limits
+        self.min_cart_position = -0.18
         
-        # UI refresh timer - 5Hz
-        self.ui_timer = self.create_timer(0.2, self.update_display)
-        
-        # Start the UI thread
-        self.screen = None
-        self.ui_thread = threading.Thread(target=self.ui_loop)
-        self.ui_thread.daemon = True
-        self.ui_thread.start()
-        
-        self.get_logger().info('CartPole Denge Kontrolcüsü Başlatıldı')
-        
-    def ui_loop(self):
-        """Terminal UI main loop"""
+        # Cart return PID parameters - Increased gains for better performance
+        self.cart_return_kp = 200.0  # Increased proportional gain
+        self.cart_return_ki = 50.0   # Added integral term
+        self.cart_return_kd = 30.0   # Increased derivative gain
+        self.cart_return_integral = 0.0  # Cart return integral term
+        self.cart_return_last_error = 0.0
+
+        # Initialize timing
+        self.last_time = self.get_clock().now().nanoseconds / 1e9
+        self.timer = self.create_timer(0.005, self.control_loop)
+
+        # Send initial zero command
+        init_cmd = Float64MultiArray()
+        init_cmd.data = [0.0]
+        self.publisher.publish(init_cmd)
+
+        # Start input thread for reset functionality
+        self.input_thread = threading.Thread(target=self.input_handler, daemon=True)
+        self.input_thread.start()
+
+        self.get_logger().info('Dual PID Controller started')
+        self.get_logger().info('Safety limits: Pole angle ±45°, Cart position ±0.18')
+        self.get_logger().info('Press ENTER to reset system if safety mode is active')
+
+    def joint_state_callback(self, msg: JointState):
         try:
-            # Initialize curses
-            self.screen = curses.initscr()
-            curses.noecho()
-            curses.cbreak()
-            self.screen.keypad(True)
-            self.screen.timeout(100)  # Non-blocking input with 100ms timeout
-            
-            while True:
-                # Get keyboard input
-                try:
-                    key = self.screen.getch()
-                    if key != -1:  # -1 means no key pressed
-                        self.process_key(key)
-                except Exception as e:
-                    self.status_message = f"Tuş hatası: {e}"
-                
-                # Sleep a bit to reduce CPU usage
-                time.sleep(0.05)
-                
-        except Exception as e:
-            # Properly clean up curses in case of error
-            if self.screen:
-                curses.nocbreak()
-                self.screen.keypad(False)
-                curses.echo()
-                curses.endwin()
-            print(f"UI hatası: {e}")
-            
-    def process_key(self, key):
-        """Process keyboard input"""
-        if key == ord('q'):  # Increase Kp_angle
-            self.Kp_angle += 0.5
-            self.last_key_message = "Kp_angle arttırıldı"
-        elif key == ord('a'):  # Decrease Kp_angle
-            self.Kp_angle = max(0, self.Kp_angle - 0.5)
-            self.last_key_message = "Kp_angle azaltıldı"
-        elif key == ord('w'):  # Increase Ki_angle
-            self.Ki_angle += 0.01
-            self.last_key_message = "Ki_angle arttırıldı"
-        elif key == ord('s'):  # Decrease Ki_angle
-            self.Ki_angle = max(0, self.Ki_angle - 0.01)
-            self.last_key_message = "Ki_angle azaltıldı"
-        elif key == ord('e'):  # Increase Kd_angle
-            self.Kd_angle += 0.2
-            self.last_key_message = "Kd_angle arttırıldı"
-        elif key == ord('d'):  # Decrease Kd_angle
-            self.Kd_angle = max(0, self.Kd_angle - 0.2)
-            self.last_key_message = "Kd_angle azaltıldı"
-        elif key == ord('r'):  # Increase Kp_pos
-            self.Kp_pos += 0.2
-            self.last_key_message = "Kp_pos arttırıldı"
-        elif key == ord('f'):  # Decrease Kp_pos
-            self.Kp_pos = max(0, self.Kp_pos - 0.2)
-            self.last_key_message = "Kp_pos azaltıldı"
-        elif key == ord('1'):  # Toggle adaptive mode
-            self.adaptive_enabled = not self.adaptive_enabled
-            self.last_key_message = f"Adaptif: {'Açık' if self.adaptive_enabled else 'Kapalı'}"
-        elif key == ord('u'):  # Increase angle weight
-            self.angle_weight = min(1.0, self.angle_weight + 0.05)
-            self.pos_weight = 1.0 - self.angle_weight
-            self.last_key_message = "Açı ağırlığı arttırıldı"
-        elif key == ord('j'):  # Decrease angle weight
-            self.angle_weight = max(0.0, self.angle_weight - 0.05)
-            self.pos_weight = 1.0 - self.angle_weight
-            self.last_key_message = "Açı ağırlığı azaltıldı"
-        elif key == ord(' '):  # Toggle pause/center cart
-            self.toggle_pause()
-        elif key == ord('x'):  # Exit
-            # Clean up curses
-            curses.nocbreak()
-            self.screen.keypad(False)
-            curses.echo()
-            curses.endwin()
-            # Exit program
-            os._exit(0)
-            
-    def toggle_pause(self):
-        """Toggle pause state and center cart"""
-        if not self.paused:
-            # Pause the controller
-            self.paused = True
-            self.centering_cart = True
-            self.status_message = "DURAKLATİLDI - Araba merkeze çekiliyor"
-            self.last_key_message = "Space tuşu: Duraklatıldı"
+            # Use 'slider_to_cart' or correct name
+            idx = msg.name.index('slider_to_cart')
+            self.current_cart_position = msg.position[idx]
+            self.current_cart_velocity = msg.velocity[idx]
+            # Use 'cart_to_pole' if needed for angle
+            idx2 = msg.name.index('cart_to_pole')
+            self.current_pole_angle = msg.position[idx2]
+        except ValueError:
+            self.get_logger().warn('JointState missing expected names')
+
+    def input_handler(self):
+        """Handle user input for system reset"""
+        while rclpy.ok():
+            try:
+                input()  # Wait for ENTER key
+                if self.safety_active:
+                    self.reset_system()
+            except:
+                break
+
+    def reset_system(self):
+        """Reset system to normal operation"""
+        # Only reset if cart is close to zero position (within 0.05m)
+        if self.current_cart_position is not None and abs(self.current_cart_position) < 0.05:
+            self.safety_active = False
+            self.pole_integral = 0.0
+            self.pole_last_error = 0.0
+            self.cart_integral = 0.0
+            self.cart_last_error = 0.0
+            self.cart_return_integral = 0.0
+            self.cart_return_last_error = 0.0
+            self.get_logger().info('System reset - Normal operation resumed')
         else:
-            # Resume the controller, but wait for pole to be upright
-            self.paused = False
-            self.centering_cart = False
-            self.control_started = False
-            self.angle_integral = 0.0
-            self.pos_integral = 0.0
-            self.status_message = "Çubuğu yukarı konumlandırın"
-            self.last_key_message = "Space tuşu: Devam"
-            
-    def update_display(self):
-        """Update the terminal UI display"""
-        if not self.screen:
+            self.get_logger().warn(f'Cannot reset: Cart not at zero position (current: {self.current_cart_position:.3f})')
+            self.get_logger().info('Wait for cart to reach zero position before resetting')
+
+    def check_safety_conditions(self):
+        """Check if safety conditions are violated"""
+        if self.current_pole_angle is None or self.current_cart_position is None:
+            return False
+        
+        angle_error = abs(self.desired_pole_angle - self.current_pole_angle)
+        cart_position = self.current_cart_position
+        
+        safety_triggered = False
+        trigger_reason = ""
+        
+        # Check if angle error exceeds 45 degrees
+        if angle_error > self.max_angle_error:
+            safety_triggered = True
+            trigger_reason = f'Pole angle error {math.degrees(angle_error):.1f}° > 45°'
+        
+        # Check if cart position exceeds limits
+        if cart_position > self.max_cart_position:
+            safety_triggered = True
+            trigger_reason = f'Cart position {cart_position:.3f} > {self.max_cart_position}'
+        elif cart_position < self.min_cart_position:
+            safety_triggered = True
+            trigger_reason = f'Cart position {cart_position:.3f} < {self.min_cart_position}'
+        
+        if safety_triggered and not self.safety_active:
+            self.safety_active = True
+            # Reset cart return controller when entering safety mode
+            self.cart_return_integral = 0.0
+            self.cart_return_last_error = 0.0
+            self.get_logger().warn(f'SAFETY ACTIVATED: {trigger_reason}')
+            self.get_logger().info('Motors stopped. Cart will return to zero. Press ENTER to reset when cart reaches zero.')
+            return True
+        
+        return self.safety_active
+
+    def cart_return_control(self, dt):
+        """Return cart to zero position using PID control"""
+        if self.current_cart_position is None or dt <= 0:
+            return 0.0
+        
+        # PID control for cart return
+        cart_error = 0.0 - self.current_cart_position
+        self.cart_return_integral += cart_error * dt
+        
+        # Anti-windup for integral term
+        max_integral = 5.0
+        self.cart_return_integral = max(min(self.cart_return_integral, max_integral), -max_integral)
+        
+        cart_derivative = (cart_error - self.cart_return_last_error) / dt
+        
+        # PID calculation
+        effort = (self.cart_return_kp * cart_error + 
+                 self.cart_return_ki * self.cart_return_integral + 
+                 self.cart_return_kd * cart_derivative)
+        
+        self.cart_return_last_error = cart_error
+        
+        # Limit effort for safety but allow sufficient force
+        max_return_effort = 300.0  # Increased max effort
+        effort = max(min(effort, max_return_effort), -max_return_effort)
+        
+        return effort
+
+    def control_loop(self):
+        now = self.get_clock().now().nanoseconds / 1e9
+        dt = now - self.last_time
+        if dt <= 0 or self.current_pole_angle is None:
+            # Publish zero to avoid controller errors
+            zero_cmd = Float64MultiArray()
+            zero_cmd.data = [0.0]
+            self.publisher.publish(zero_cmd)
+            self.last_time = now
             return
-            
-        try:
-            self.screen.clear()
-            
-            # Draw header
-            self.screen.addstr(0, 0, "== CartPole PID Kontrolcü ==", curses.A_BOLD)
-            
-            # Draw PID parameters
-            self.screen.addstr(2, 0, "PID Parametreleri:")
-            self.screen.addstr(3, 2, f"Kp_angle: {self.Kp_angle:.2f}  [q/a] ")
-            self.screen.addstr(4, 2, f"Ki_angle: {self.Ki_angle:.3f}  [w/s] ")
-            self.screen.addstr(5, 2, f"Kd_angle: {self.Kd_angle:.2f}  [e/d] ")
-            self.screen.addstr(6, 2, f"Kp_pos:   {self.Kp_pos:.2f}  [r/f] ")
-            self.screen.addstr(7, 2, f"Adaptif:  {'Açık' if self.adaptive_enabled else 'Kapalı'}  [1] ")
-            self.screen.addstr(8, 2, f"Açı Ağr:  {self.angle_weight:.2f}  [u/j] ")
-            
-            # System status
-            self.screen.addstr(10, 0, "Sistem Durumu:")
-            self.screen.addstr(11, 2, f"Açı: {self.angle_deg:.1f}°")
-            self.screen.addstr(12, 2, f"Poz: {self.cart_pos:.3f} m")
-            self.screen.addstr(13, 2, f"Kuvvet: {self.force_output:.2f} N")
-            
-            # Controller status
-            status_y = 15
-            self.screen.addstr(status_y, 0, "Kontrol Durumu: ")
-            if self.paused:
-                self.screen.addstr(status_y, 16, "DURAKLATILDI", curses.A_BOLD)
-            elif not self.control_started:
-                self.screen.addstr(status_y, 16, "BEKLİYOR", curses.A_BOLD)
-            else:
-                self.screen.addstr(status_y, 16, "AKTİF", curses.A_BOLD)
-            
-            # Status message
-            self.screen.addstr(16, 0, f"Durum: {self.status_message}")
-            
-            # Last key message
-            if self.last_key_message:
-                self.screen.addstr(17, 0, f"Son işlem: {self.last_key_message}")
-            
-            # Controls reminder
-            self.screen.addstr(19, 0, "[Space] Duraklat/Devam   [x] Çıkış")
-            
-            # Refresh the screen
-            self.screen.refresh()
-            
-        except Exception as e:
-            # Catch any drawing errors
-            pass
+
+        # Check safety conditions
+        safety_violation = self.check_safety_conditions()
         
-    def state_callback(self, msg):
-        """Process joint state data from the system"""
-        try:
-            if len(msg.position) >= 2:
-                self.cart_pos = msg.position[0]
-                self.pole_angle = msg.position[1]
-                
-                # Calculate angle in degrees for display
-                self.angle_deg = math.degrees(self.normalize_angle(self.pole_angle))
-                
-                if len(msg.velocity) >= 2:
-                    self.cart_vel = msg.velocity[0]
-                    self.pole_vel = msg.velocity[1]
-                
-                # Auto-start control when pole is near upright (if not paused)
-                if not self.control_started and not self.paused:
-                    normalized_angle = self.normalize_angle(self.pole_angle)
-                    if abs(normalized_angle) < math.radians(45):
-                        self.control_started = True
-                        self.status_message = "Denge kontrolü aktif"
-                        self.angle_integral = 0.0
-                        self.pos_integral = 0.0
-                        self.prev_time = self.get_clock().now()
-                
-        except Exception as e:
-            self.status_message = f"State callback hatası: {str(e)}"
-    
-    def normalize_angle(self, angle):
-        """Normalize angle to -pi to pi range (0 = upright position)"""
-        return ((angle + math.pi) % (2 * math.pi)) - math.pi
-    
-    def calculate_adaptive_gains(self, angle):
-        """Calculate adaptive gains based on pole angle"""
-        if not self.adaptive_enabled:
-            return self.Kp_angle, self.Ki_angle, self.Kd_angle
+        if safety_violation or self.safety_active:
+            # Safety mode: return cart to zero and stop pole control
+            effort = self.cart_return_control(dt)
             
-        angle_abs = abs(angle)
-        
-        # Near upright position (within 5 degrees)
-        if angle_abs < math.radians(5.0):
-            # Use gentler control parameters when pole is almost upright
-            kp = self.Kp_angle * self.adaptive_scale_p  # Default: 70% of normal P gain
-            ki = self.Ki_angle * self.adaptive_scale_i  # Default: 50% of normal I gain
-            kd = self.Kd_angle * self.adaptive_scale_d  # Default: 120% of normal D gain
-        # Transition zone (5-15 degrees)
-        elif angle_abs < math.radians(15.0):
-            # Linear interpolation between gentle and normal gains
-            ratio = (angle_abs - math.radians(5.0)) / math.radians(10.0)
-            kp = self.Kp_angle * (self.adaptive_scale_p + ((1.0 - self.adaptive_scale_p) * ratio))
-            ki = self.Ki_angle * (self.adaptive_scale_i + ((1.0 - self.adaptive_scale_i) * ratio))
-            kd = self.Kd_angle * (self.adaptive_scale_d - ((self.adaptive_scale_d - 1.0) * ratio))
+            # Log safety status with more detail
+            if self.current_cart_position is not None:
+                distance_to_zero = abs(self.current_cart_position)
+                self.get_logger().info(f"SAFETY MODE - Cart Pos: {self.current_cart_position:.3f}, "
+                                     f"Distance to zero: {distance_to_zero:.3f}, Effort: {effort:.3f}")
+                
+                # Notify when cart is close to zero
+                if distance_to_zero < 0.05:
+                    self.get_logger().info("Cart near zero position - Ready for reset!")
         else:
-            # Use normal gain values when far from upright
-            kp = self.Kp_angle
-            ki = self.Ki_angle
-            kd = self.Kd_angle
-            
-        return kp, ki, kd
-    
-    def center_cart(self):
-        """Simple controller to center the cart"""
-        # P controller to center the cart
-        kp_center = 5.0
-        kd_center = 3.0
-        
-        # Calculate centering force
-        center_force = -kp_center * self.cart_pos - kd_center * self.cart_vel
-        
-        # Limit force for safety
-        max_force = 10.0
-        center_force = max(min(center_force, max_force), -max_force)
-        
-        # Check if cart is centered (position and velocity close to zero)
-        is_centered = abs(self.cart_pos) < 0.02 and abs(self.cart_vel) < 0.05
-        
-        # If cart is centered, stop centering mode
-        if is_centered and self.centering_cart:
-            self.status_message = "Araba merkeze döndü. Space tuşuna basın."
-            self.centering_cart = False
-            center_force = 0.0
-        
-        return center_force
-        
-    def pid_control(self):
-        """PID control algorithm with adaptive gains"""
-        # Calculate time difference
-        current_time = self.get_clock().now()
-        dt = (current_time - self.prev_time).nanoseconds / 1e9  # seconds
-        
-        # Safety check for time step
-        if dt <= 0 or dt > 0.1:
-            dt = 0.01  # Default time step
-        
-        # Normalize angle (upright = 0)
-        normalized_angle = self.normalize_angle(self.pole_angle)
-        
-        # Get adaptive gains based on current angle
-        kp_angle, ki_angle, kd_angle = self.calculate_adaptive_gains(normalized_angle)
-        
-        # Calculate errors
-        angle_error = normalized_angle  # Target angle = 0 (upright)
-        pos_error = self.cart_pos       # Target position = 0 (center)
-        
-        #----------------------
-        # Angle PID Control
-        #----------------------
-        p_angle = kp_angle * angle_error
-        
-        self.angle_integral += angle_error * dt
-        self.angle_integral = max(min(self.angle_integral, 1.0), -1.0)
-        i_angle = ki_angle * self.angle_integral
-        
-        d_angle = kd_angle * self.pole_vel
-        
-        angle_control = -(p_angle + i_angle + d_angle)
-        
-        #----------------------
-        # Position PID Control
-        #----------------------
-        p_pos = self.Kp_pos * pos_error
-        
-        self.pos_integral += pos_error * dt
-        self.pos_integral = max(min(self.pos_integral, 0.5), -0.5)
-        i_pos = self.Ki_pos * self.pos_integral
-        
-        d_pos = self.Kd_pos * self.cart_vel
-        
-        pos_control = -(p_pos + i_pos + d_pos)
-        
-        #----------------------
-        # Weighted Total Control
-        #----------------------
-        total_control = (self.angle_weight * angle_control + 
-                         self.pos_weight * pos_control)
-        
-        # Update time
-        self.prev_time = current_time
-        
-        return total_control
-    
-    def control_callback(self):
-        """Main control loop"""
-        # Check pause state first
-        if self.paused:
-            # If in centering mode, run the cart centering controller
-            if self.centering_cart:
-                control_force = self.center_cart()
-            else:
-                # Just send zero command while paused
-                control_force = 0.0
-                
-            cmd_msg = Float64MultiArray()
-            cmd_msg.data = [float(control_force)]
-            self.command_pub.publish(cmd_msg)
-            self.force_output = control_force
-            return
-            
-        # Normal control flow
-        if not self.control_started:
-            cmd_msg = Float64MultiArray()
-            cmd_msg.data = [0.0]
-            self.command_pub.publish(cmd_msg)
-            self.force_output = 0.0
-            return
-        
-        # Calculate control force
-        control_force = self.pid_control()
-        
-        # Apply cart limits - simple version
-        if abs(self.cart_pos) > 0.7 * self.cart_limit:
-            # Add force to push back toward center
-            limit_force = -np.sign(self.cart_pos) * 5.0 * (abs(self.cart_pos) - 0.7 * self.cart_limit) / (0.3 * self.cart_limit)
-            control_force += limit_force
-        
-        # Limit force for safety
-        max_force = 15.0
-        control_force = max(min(control_force, max_force), -max_force)
-        
-        # Save for display
-        self.force_output = control_force
-        
-        # Send command
-        cmd_msg = Float64MultiArray()
-        cmd_msg.data = [float(control_force)]
-        self.command_pub.publish(cmd_msg)
+            # Normal operation: PID control on pole angle
+            error = self.desired_pole_angle - self.current_pole_angle
+            self.pole_integral += error * dt
+            derivative = (error - self.pole_last_error) / dt
+            effort = -(self.kp_pole * error + self.ki_pole * self.pole_integral + self.kd_pole * derivative)
+            self.pole_last_error = error
+
+            # Log normal operation
+            self.get_logger().info(f"Normal Mode - Pole Angle: {self.current_pole_angle:.3f}, Effort: {effort:.3f}")
+
+        # Publish command
+        cmd = Float64MultiArray()
+        cmd.data = [effort]
+        self.publisher.publish(cmd)
+
+        self.last_time = now
+
 
 def main(args=None):
     rclpy.init(args=args)
-    
+    node = DualPIDController()
     try:
-        controller = CartpoleBalanceController()
-        rclpy.spin(controller)
-        
-    except Exception as e:
-        print(f"Hata: {str(e)}")
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
     finally:
-        # Clean up curses in case it's still active
-        try:
-            curses.nocbreak()
-            curses.echo()
-            curses.endwin()
-        except:
-            pass
+        node.destroy_node()
         rclpy.shutdown()
 
 if __name__ == '__main__':

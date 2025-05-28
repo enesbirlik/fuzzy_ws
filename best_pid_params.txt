@@ -1,0 +1,7 @@
+kp_pole = 20.32250000000003
+ki_pole = 0.00030000000000000003
+kd_pole = 5.580999999999986
+pwm_scale_factor = 2.0
+bias_pwm = 10.0
+desired_pole_angle = -3.141592653589793
+# Saved at: Mon May 12 15:31:46 2025

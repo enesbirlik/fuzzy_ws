@@ -10,6 +10,7 @@
 #include <vector>
 #include <string>
 
+
 namespace cartpole_controller {
 
 class CartpoleHardwareInterface : public hardware_interface::SystemInterface {
@@ -48,7 +49,13 @@ private:
   // Donanım bağlantısını yönetecek değişkenler
   // (örneğin bir seri port için file descriptor)
   int connection_handle_;
+
+private:
+  std::string read_buffer_;  // Buffer for accumulating partial reads
+  bool parse_and_update_data(const std::string& line);  // Helper function
 };
+
+
 
 }  // namespace cartpole_controller
 
